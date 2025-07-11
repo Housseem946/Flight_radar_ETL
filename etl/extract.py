@@ -65,6 +65,7 @@ def save_to_csv(df: pd.DataFrame):
 
 if __name__ == "__main__":
     df = extract_flights()
+    print("df head \n",df.head(5))
     if not df.empty:
         save_to_csv(df)
     else:

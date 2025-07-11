@@ -4,32 +4,61 @@
 #                  #  
 ####################
 
-# Extract data from flightRadar api sous format csv 
-from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, count, desc
+# transform data ( EDA( exploration data analysis, data cleaning.. )
 
-def transform_data(csv_path):
-    spark = SparkSession.builder \
-        .appName("FlightRadar - Analyse des vols") \
-        .getOrCreate()
+import pandas as pd
+import logging
 
-    # Lire le CSV
-    df = spark.read.option("header", "true").csv(csv_path)
+logger = logging.getLogger(__name__)
 
-    df.printSchema()
-    df.show(10, truncate=False)
+def clean_flights_data(df: pd.DataFrame) -> pd.DataFrame:
+    logger.info("Nettoyage des données de vol...")
 
-    # ✅ Exemple d’indicateur 1 : nombre de vols par compagnie (IATA)
-    vols_par_compagnie = df.groupBy("airline_iata") \
-        .agg(count("*").alias("nombre_vols")) \
-        .orderBy(desc("nombre_vols"))
+    ##### let's do some data exploration to understand our data, so that we can do the data cleaning 
 
-    vols_par_compagnie.show()
+    # Aperçu général
 
-    # Tu peux retourner les résultats ou les sauvegarder
-    return vols_par_compagnie
+    print("shape \n",df.shape)
+    
+    print("head of df \n",df.head())
 
-if __name__ == "__main__":
-    # Mets ici le chemin du fichier CSV généré dans `extract.py`
-    csv_path = "data/rawzone/tech_year=2025/tech_month=2025-07/tech_day=2025-07-11/flights_20250711_XXXXXX.csv"
-    transform_data(csv_path)
+    print("Columns \n",df.columns)
+
+    print("types \n", df.dtypes)
+
+    # Valeurs manquantes
+
+    print("Valeurs manquantes en % \n",(df.isnull().sum() / len(df)).sort_values(ascending=False))
+
+
+    # Valeurs uniques
+
+    print("Valeurs unique \n",df.nunique().sort_values(ascending=False))
+
+    # Statistiques descriptives
+
+    print("Statistiques descriptives \n", df.describe(include='all'))
+
+    # Duplicats
+
+    # Répartition des compagnies 
+
+    print("Répartition des compagnies   \n", df["airline_icao"].value_counts().head(10))
+
+    # 🌍 Répartition des origines/destinations :
+
+
+    # Suppression des lignes incomplètes
+    df.dropna(subset=["origin", "destination", "airline_icao"], inplace=True)
+
+    # Suppression des doublons
+    df.drop_duplicates(subset=["id"], inplace=True)
+
+    # Conversion de types
+    df["altitude"] = pd.to_numeric(df["altitude"], errors="coerce")
+    df["ground_speed"] = pd.to_numeric(df["ground_speed"], errors="coerce")
+    df["latitude"] = pd.to_numeric(df["latitude"], errors="coerce")
+    df["longitude"] = pd.to_numeric(df["longitude"], errors="coerce")
+
+    logger.info("Nettoyage terminé.")
+    return df
