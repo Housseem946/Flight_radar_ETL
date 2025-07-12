@@ -18,4 +18,4 @@ airflow.db
 *.pid
 
 # fichiers secrets
-.env
+.venv39
