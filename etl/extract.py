@@ -63,6 +63,8 @@ def save_to_csv(df: pd.DataFrame):
     logger.info(f"Données sauvegardées dans {file_path}")
     return file_path
 
+
+# pour exécuter le fichier extract.py 
 if __name__ == "__main__":
     df = extract_flights()
     print("df head \n",df.head(5))

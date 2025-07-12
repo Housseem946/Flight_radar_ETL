@@ -1,6 +1,8 @@
 # Fichier pour éxecuter les etl ( 3 fichiers(extract.py, transform.py, load.py)) : 
 # --> output : Parquet(pour une meileure manipulation avec pyspark)
 
+### À ignorer (plus utilisé, remplacé par DAG)	
+
 from extract import extract_flights
 from transform import clean_flights_data
 from load import save_to_parquet

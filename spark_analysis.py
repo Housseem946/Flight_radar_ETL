@@ -10,58 +10,6 @@
 # os.environ["JAVA_HOME"] = r"C:\Users\houss\AppData\Local\Programs\Eclipse Adoptium\jdk-11.0.26.4-hotspot"
 # os.environ["PATH"] += os.pathsep + os.path.join(os.environ["JAVA_HOME"], "bin")
 
-# from pyspark.sql import SparkSession
-# from pyspark.sql.functions import col, count, avg, desc, length, expr
-# from datetime import datetime
-# import os
-
-# def get_latest_parquet(base_path="Flights/rawzone"):
-#     """
-#     Retourne le chemin du fichier parquet le plus récent.
-#     """
-#     folders = []
-#     for root, dirs, files in os.walk(base_path):
-#         for file in files:
-#             if file.endswith(".parquet"):
-#                 folders.append(os.path.join(root, file))
-#     return max(folders) if folders else None
-
-
-# def run_spark_kpis():
-#     spark = SparkSession.builder \
-#         .appName("FlightRadar KPIs") \
-#         .getOrCreate()
-
-#     file_path = get_latest_parquet()
-#     if not file_path:
-#         print("Aucun fichier parquet trouvé.")
-#         return
-
-#     df = spark.read.parquet(file_path)
-#     df.cache()
-
-#     # 📊 KPI 1 : La compagnie avec le + de vols en cours
-#     df.groupBy("airline_icao").count().orderBy(desc("count")).show(1, truncate=False)
-
-#     # 📊 KPI 2 : Le vol en cours avec le trajet le plus long (si tu as distance calculée)
-#     # Ex: rajoute un champ 'distance' dans ta phase de transformation si tu veux faire ça proprement
-#     # Sinon on peut calculer la distance avec Haversine dans Pandas, puis charger le champ ici
-
-#     # 📊 KPI 3 : Moyenne de longueur des vols par continent
-#     # Il te faut une table de mapping IATA ↔ continent pour les aéroports
-
-#     # 📊 KPI 4 : Constructeur d'avion avec le + de vols actifs
-#     # Il te faut un mapping registration ↔ manufacturer ↔ model
-#     # Tu peux enrichir les données avec OpenSky, Planespotters ou autres sources (ex: CSV externe)
-
-#     # 📊 KPI 5 : Pour chaque pays de la compagnie, top 3 modèles d’avion
-#     # Requiert mapping ICAO compagnie ↔ pays + registration ↔ modèle
-#     # Exemple si enrichi :
-#     # df.groupBy("pays_compagnie", "modele_avion").agg(count("*").alias("nb")).orderBy(desc("nb")).show()
-
-#     spark.stop()
-
-
 ##########################################################################################
 
 import os
@@ -72,18 +20,26 @@ from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, avg, row_number, desc
 from pyspark.sql.window import Window
 from collections import defaultdict
+import glob
+
 
 #  Initialisation de la session Spark
 spark = SparkSession.builder.appName("FlightAnalysis").getOrCreate()
 print("✅ SparkSession créée avec succès")
 
-# Chargement des données sous format parquet (manip plus rapide avvec spark)
-df = spark.read.parquet("etl/Flights/rawzone/tech_year=2025/tech_month=2025-07/tech_day=2025-07-11/flights_20250711213100.parquet")
+# Trouver dynamiquement le dernier fichier .parquet
+files = glob.glob("etl/Flights/rawzone/tech_year=*/tech_month=*/tech_day=*/flights_*.parquet")
+if not files:
+    raise FileNotFoundError("Aucun fichier Parquet trouvé dans la rawzone.")
+    
+latest_file = sorted(files)[-1] # To get the last file
+print(f"Chargement du fichier : {latest_file}")
+df = spark.read.parquet(latest_file)
 
 df.printSchema()
 df.show(5)
 
-#  Nettoyage : vols en cours avec infos géographiques et compagnie
+#  Nettoyage des valeurs nulles
 clean_df = df.filter(
     (col("latitude").isNotNull()) &
     (col("longitude").isNotNull()) &
@@ -105,7 +61,7 @@ top_airline = (
 if top_airline:
     print(f"✈️ {top_airline['airline_iata']} avec {top_airline['count']} vols.")
 else:
-    print("❌ Données insuffisantes.")
+    print(" Données insuffisantes.")
 
 
 # -------------------------------
@@ -128,7 +84,7 @@ if "origin" in clean_df.columns and "destination" in clean_df.columns:
         .collect()
     )
     for row in top_regional:
-        print(f"🌍 {row['origin']} ➤ {row['airline_iata']} ({row['count']} vols)")
+        print(f" {row['origin']} ➤ {row['airline_iata']} ({row['count']} vols)")
 else:
     print("⚠️ Colonnes 'origin' ou 'destination' absentes.")
 
@@ -193,6 +149,7 @@ avg_altitude = (
 print("\n📌 Altitude moyenne des vols en cours par continent (approximation de la longueur) :")
 for row in avg_altitude.collect():
     print(f"🌍 {row['continent']} ➤ {round(row['avg_altitude'], 2)} pieds")
+
 
 # -------------------------------
 # 5 . Constructeur avec le plus de vols actifs

@@ -1,0 +1,22 @@
+version: '3.7'
+
+services:
+  airflow:
+    image: apache/airflow:2.9.1-python3.9
+    restart: always
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=sqlite:////opt/airflow/airflow.db
+      - AIRFLOW__CORE__FERNET_KEY=your_fernet_key_here
+      - AIRFLOW__CORE__DAGS_FOLDER=/opt/airflow/dags
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+    volumes:
+      - ./scheduler:/opt/airflow/dags
+      - ./data:/opt/airflow/data
+      - ./etl:/opt/airflow/etl
+    ports:
+      - "8080:8080"
+    command: >
+      bash -c "airflow db init &&
+               airflow users create --username admin --firstname admin --lastname admin --role Admin --email admin@airflow.com --password admin &&
+               airflow webserver & airflow scheduler"
