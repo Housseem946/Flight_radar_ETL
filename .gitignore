@@ -1,0 +1,21 @@
+# Environnement Python
+__pycache__/
+*.pyc
+
+# Fichiers de logs
+logs/
+*.log
+
+# Notebooks checkpoints
+.ipynb_checkpoints/
+
+# Jupyter
+*.ipynb
+notebooks/*.ipynb
+
+# Airflow (si jamais tu l’ajoutes)
+airflow.db
+*.pid
+
+# fichiers secrets
+.env

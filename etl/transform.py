@@ -83,5 +83,18 @@ def clean_flights_data(df: pd.DataFrame) -> pd.DataFrame:
     df["longitude"] = pd.to_numeric(df["longitude"], errors="coerce")
 
 
+    # callsign, airline_iata, airline_icao : pour identifier les compagnies
+
+    # aircraft_code, registration, squawk : pour identifier les avions
+
+    # latitude, longitude, altitude : position
+
+    # origin, destination : codes IATA
+
+    # ground_speed, heading, vertical_speed, on_ground : pour l'état du vol
+
+    # time : timestamp (en secondes POSIX, à convertir si besoin)
+
+
     logger.info("Nettoyage terminé.")
     return df

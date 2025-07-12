@@ -6,7 +6,6 @@
 
 # Load Data sous format parquet ( pour ....)
 
-# etl/load.py
 import os
 from datetime import datetime, timezone
 
