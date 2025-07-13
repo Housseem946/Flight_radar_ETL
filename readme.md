@@ -14,7 +14,7 @@ Ce projet vise à construire un pipeline **ETL industrialisé**, **tolérant aux
 |  API FlightRadar24   |     |  Nettoyage, EDA      |     |  Parquet horodaté    |
 +----------------------+     +----------------------+     +----------------------+
 
-                          Orchestration toutes les 2h via Airflow
+                          Orchestration toutes les 2h
 
                                  |
                                  v
