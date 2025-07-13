@@ -79,6 +79,11 @@ data/rawzone/tech_year=YYYY/tech_month=YYYY-MM/tech_day=YYYY-MM-DD/
 ```
 ---
 
+
+## 🔁 Ou bien Cornjob Python
+
+Lancer un script python ( Boucle while infinie avec un sleep à définir ( 2h dans mon cas ))
+
 ## Indicateurs métier calculés
 
 Les fichiers générés sont analysés via **PySpark** dans `notebooks/spark_analysis.py`.  
@@ -115,7 +120,7 @@ Voici les **indicateurs extraits** :
 ## Observabilité
 
 - Les logs d’extraction, de transformation, de nettoyage et de sauvegarde sont disponibles à chaque run.
-- **Les logs Airflow permettent une visibilité complète de l’exécution**.
+- **Les logs Airflow permettent une visibilité complète de l’exécution**. ( Ou les logs du Cronjob python)
 
 ---
 
@@ -137,14 +142,14 @@ spark-submit notebooks/spark_analysis.py
 ## ou bien 
 python spark_analysis.py
 ```
-
+Ou bien lancer le notebook Flight_radar_ETL
 ---
 
 ## Améliorations possibles
 
-- Utilisation d'un systéme de stockage en base de données ( postgre par ex)
+- Utilisation d'un systéme de stockage en base de données ( postgre par ex) et remplacer le Cronjob Python par une pipeline Airflow
 - Dashboard en live via **Grafana** ou **Tableau** 
 
 ---
 
-## Auteur By me 
+## Authored By me 

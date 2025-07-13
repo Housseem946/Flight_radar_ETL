@@ -4,12 +4,13 @@
 #                  #  
 ####################
 
-# Extract data from flightRadar api sous format csv 
+# Extract data from flightRadar api sous format dataframe
 
 import pandas as pd
 import logging
 from datetime import datetime, timezone
 import os
+from FlightRadar24 import FlightRadar24API
 
 # Setup des logs
 logger = logging.getLogger(__name__)
@@ -17,7 +18,6 @@ logging.basicConfig(level=logging.INFO)
 
 
 def extract_flights():
-    from FlightRadar24 import FlightRadar24API
     api = FlightRadar24API()
     flights = api.get_flights()
 
@@ -50,24 +50,4 @@ def extract_flights():
 
     return pd.DataFrame(data)
 
-
-# En respectant la nomenclature hordatée demandée 
-
-def save_to_csv(df: pd.DataFrame):
-    now = datetime.now(timezone.utc)
-    folder_path = f"data/rawzone/tech_year={now.year}/tech_month={now.strftime('%Y-%m')}/tech_day={now.strftime('%Y-%m-%d')}"
-    os.makedirs(folder_path, exist_ok=True)
-    file_path = f"{folder_path}/flights{now.strftime('%Y%m%d%H%M%S')}.csv"
-    df.to_csv(file_path, index=False)
-    logger.info(f"Données sauvegardées dans {file_path}")
-    return file_path
-
-
-# pour exécuter le fichier extract.py 
-if __name__ == "__main__":
-    df = extract_flights()
-    print("df head \n",df.head(5))
-    if not df.empty:
-        save_to_csv(df)
-    else:
-        logger.warning("Aucune donnée de vol extraite.")
+#df = extract_flights()

@@ -8,8 +8,13 @@
 
 import os
 from datetime import datetime, timezone
+import pandas as pd
 
-def save_to_parquet(df, base_path="Flights/rawzone"):
+def save_to_csv(df: pd.DataFrame, base_path="Flights/rawzone") -> str:
+    """
+    Sauvegarde le DataFrame au format CSV avec une nomenclature horodatée.
+    Exemple de chemin : Flights/rawzone/tech_year=2025/tech_month=2025-07/tech_day=2025-07-13/flights_20250713124500.csv
+    """
     now = datetime.now(timezone.utc)
 
     # Création du chemin horodaté
@@ -21,11 +26,12 @@ def save_to_parquet(df, base_path="Flights/rawzone"):
     )
     os.makedirs(path, exist_ok=True)
 
-    # Nom du fichier parquet
-    filename = f"flights_{now.strftime('%Y%m%d%H%M%S')}.parquet"
+    # Nom du fichier CSV
+    filename = f"flights_{now.strftime('%Y%m%d%H%M%S')}.csv"
     full_path = os.path.join(path, filename)
 
-    # Sauvegarde en Parquet
-    df.to_parquet(full_path, index=False)
-    print(f"Fichier sauvegardé : {full_path}")
+    # Sauvegarde en CSV
+    df.to_csv(full_path, index=False)
+    print(f"[INFO] Fichier CSV sauvegardé : {full_path}")
+
     return full_path

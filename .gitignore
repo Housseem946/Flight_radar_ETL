@@ -1,5 +1,7 @@
 # Environnement Python
 __pycache__/
+__pycache__
+
 *.pyc
 
 # Fichiers de logs
@@ -13,9 +15,15 @@ logs/
 *.ipynb
 notebooks/*.ipynb
 
-# Airflow (si jamais tu l’ajoutes)
+# Airflow
 airflow.db
 *.pid
 
 # fichiers secrets
-*.venv39
+venv39
+
+.vscode
+.env
+Dockerfile
+
+.gitignore
