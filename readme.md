@@ -1,9 +1,8 @@
-# ✈️ FlightRadar24 - ETL & Airflow Pipeline
+# ✈️ FlightRadar24 - ETL Pipeline avec CRON
 
 ## Objectif
 
-Ce projet a pour but de construire un pipeline **ETL industrialisé**, tolérant aux erreurs et observable, qui récupère les données de vol en temps réel depuis l’API FlightRadar24 toutes les **2 heures**, les nettoie, les transforme, puis les stocke sous **format Parquet**.  
-Ces données sont ensuite analysées via **PySpark** pour générer des **indicateurs métier** sur le trafic aérien mondial.
+Ce projet vise à construire un pipeline **ETL industrialisé**, **tolérant aux erreurs**, et **observable**, qui récupère toutes les **2 heures** les données de vol en temps réel depuis l’API [FlightRadar24](https://github.com/JeanExtreme002/FlightRadarAPI), les nettoie, les stocke au format **CSV** (nomenclature horodatée), puis lance une **analyse Spark** pour générer des **indicateurs métier** sur le trafic aérien mondial.
 
 ---
 
@@ -35,23 +34,25 @@ Ces données sont ensuite analysées via **PySpark** pour générer des **indica
 ├── etl/
 │   ├── extract.py         # Récupération des vols depuis FlightRadar24
 │   ├── transform.py       # Exploration et nettoyage des données
-│   └── load.py            # Sauvegarde en Parquet (partitionné)
+│   └── load.py            # Sauvegarde CSV horodatée
+|   └── pipeline.py        # Orchestration ETL en script Python
 │
-├── scheduler/
-|   |
-│   |__ flightradar_dag.py # DAG Airflow (run toutes les 2h)
-|   |
-│   └── dag_functions.py    # regroupe les fichiers d'etl
+├── .gitignore                # Fichiers ignorés par Git
+|
 |   
 │
 ├── data/
 │   └── rawzone/           # Données Parquet structurées : tech_year=YYYY/...
 │
 ├── notebooks/
-│   └── spark_analysis.py  # Affichage des résultats des analyses des indicateurs via PySpark
+│   └── Flight_radar_ETL.ipynb    # Notebook principal pour l'affichage des résultats des analyses des indicateurs via PySpark
 │
+|── spark_analysis.py        # Script PySpark pour les analyses
+|
 ├── README.md              # README
 └── requirements.txt       # Dépendances (Airflow, pandas, FlightRadarAPI...)
+└── conception.md          # Schéma d’architecture 
+
 ```
 
 ---
@@ -61,14 +62,32 @@ Ces données sont ensuite analysées via **PySpark** pour générer des **indica
 - **Python** 3.9.5
 - **FlightRadar24 API** (librairie `FlightRadarAPI`)
 - **pandas** (EDA + nettoyage)
-- **Airflow** (orchestration toutes les 2h)
-- **Parquet** (stockage optimisé)
+- **CRON Python** (orchestration via boucle infinie avec `sleep`)
+- **Airflow** (orchestration toutes les 2h) ( Abondonné pour le moment)
+- **Parquet** (stockage optimisé)  ( Abondonné pour le moment)
 - **PySpark** (analyses distribuées)(3.5.0)
 - **Logging Python** (observabilité)
 
+
+## 🔁 Orchestration avec CRON Python (Job 2H)
+
+Un script Python (`pipeline.py`) encapsule le pipeline complet et est lancé automatiquement toutes les **2 heures** via une boucle ou tâche planifiée (cronjob).  
+Pour test local, on peut définir `sleep(120)` (2 minutes).
+
+Exemple :
+```bash
+python pipeline.py  # Lancement unique
+```
+Ou dans une boucle infinie :
+
+```
+while True:
+    run_pipeline()
+    time.sleep(2 * 60 * 60)  # 2 heures
+```
 ---
 
-## 🔁 Orchestration via Airflow
+## 🔁 Orchestration via Airflow ( Pas utilisé pour le moment )
 
 Le fichier `scheduler/flightradar_dag.py` définit un DAG Airflow déclenché toutes les **2 heures**, composé de 3 tâches :
 - `extract_task` → `transform_task` → `load_task`
@@ -79,42 +98,60 @@ data/rawzone/tech_year=YYYY/tech_month=YYYY-MM/tech_day=YYYY-MM-DD/
 ```
 ---
 
-
-## 🔁 Ou bien Cornjob Python
-
-Lancer un script python ( Boucle while infinie avec un sleep à définir ( 2h dans mon cas ))
-
 ## Indicateurs métier calculés
 
-Les fichiers générés sont analysés via **PySpark** dans `notebooks/spark_analysis.py`.  
+Les fichiers générés sont analysés via **PySpark** dans `spark_analysis.py`.  
 Voici les **indicateurs extraits** :
 
-1. ** Compagnie avec le plus de vols en cours**
-   > Ex : `La compagnie avec le plus de vols en cours est : Lufthansa (DLH) avec 92 vols.`
+1. Compagnie avec le plus de vols en cours
 
-2. ** Par continent, la compagnie avec le plus de vols régionaux**
-   > Ex : `En Europe, Air France a le plus de vols intra-continentaux.`
+2. Par continent, la compagnie avec le plus de vols régionaux
 
-3. ** Vol en cours avec le trajet le plus long (en distance géographique)**
-   > Ex : `Le vol le plus long actuellement est : SQ24 entre SIN → JFK (distance : 15 349 km)`
+3. Vol en cours avec le trajet le plus long
 
-4. ** Moyenne de la longueur des vols régionaux par continent**
-   > Ex : `En Asie, les vols régionaux ont une distance moyenne de 1520 km.`
+4.  Moyenne des distances de vol par continent
 
-5. ** Constructeur d’avions avec le plus de vols actifs**
-   > Ex : `Le constructeur ayant le plus d’avions en vol est : Boeing`
+5.  Constructeur d’avions avec le plus de vols actifs
 
-6. ** Top 3 des modèles d’avions actifs par pays (compagnie)**
-   > Ex : `En France : A320, B737, A321`
+6.  Top 3 modèles d’avions utilisés par pays de la compagnie
 
 ---
 
+## Stockage horodaté
+
+Les fichiers CSV sont sauvegardés dans la structure suivante :
+
+```bash
+
+Flights/rawzone/
+  └── tech_year=2025/
+        └── tech_month=2025-07/
+              └── tech_day=2025-07-13/
+                    └── flights_20250713122027.csv
+```
+
 ## Tolérance aux erreurs
 
-- Chaque étape est encapsulée avec des `try/except` + logs.
-- Fichier vide ou API indisponible = ETL arrêté proprement.
-- Les erreurs sont tracées sans bloquer l’ensemble du DAG.
+- Bloc try/except autour de chaque étape (extract, transform, load)
+- Les messages apparaissent aussi dans le terminal ou le notebook
+- Les erreurs Spark sont également loggées
 
+## Comment exécuter le pipeline manuellement
+
+```bash
+# Lancer manuellement le pipeline ETL
+python etl/pipeline.py
+
+# Lancer l'analyse Spark
+python spark_analysis.py
+```
+
+Ou depuis le notebook :
+
+```bash
+
+run_pipeline()
+```
 ---
 
 ## Observabilité
@@ -147,9 +184,33 @@ Ou bien lancer le notebook Flight_radar_ETL
 
 ## Améliorations possibles
 
-- Utilisation d'un systéme de stockage en base de données ( postgre par ex) et remplacer le Cronjob Python par une pipeline Airflow
+- Utilisation d'un systéme de stockage en base de données ( postgre par ex) et remplacer le Cronjob Python par un orchestrateur comme Airflow
 - Dashboard en live via **Grafana** ou **Tableau** 
+- Monitoring via Grafana / Prometheus
 
 ---
 
+## Logique d’exécution
+
+1. CRON déclenche le job pipeline.py toutes les 2 heures
+
+2. Le pipeline :
+
+      - extrait les données de l’API
+
+      - nettoie avec pandas
+
+      - sauvegarde en CSV dans Flights/rawzone/...
+
+
+3. Le script spark_analysis.py lit le dernier fichier CSV et affiche les résultats métiers
+
+
+## Remarques
+
+J’ai opté pour un cronjob Python temporaire à la place d’Airflow en raison de contraintes de compatibilité (notamment avec WSL).
+Une version orchestrée Airflow sera proposée dans une future branche.
+
 ## Authored By me 
+
+N'hésitez pas à me contacter sur  LinkedIn en cas de problème ou piste d'amélioration.
