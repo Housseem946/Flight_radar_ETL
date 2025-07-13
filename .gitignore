@@ -4,10 +4,6 @@ __pycache__/
 *.log
 *.pid
 
-# Jupyter
-.ipynb_checkpoints/
-*.ipynb
-
 # Environnement virtuel
 .venv/
 venv/
