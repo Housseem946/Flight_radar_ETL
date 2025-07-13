@@ -10,8 +10,6 @@ import pandas as pd
 import logging
 from datetime import datetime, timezone
 import os
-from FlightRadar24.api import FlightRadar24API 
-
 
 # Setup des logs
 logger = logging.getLogger(__name__)
@@ -19,6 +17,7 @@ logging.basicConfig(level=logging.INFO)
 
 
 def extract_flights():
+    from FlightRadar24 import FlightRadar24API
     api = FlightRadar24API()
     flights = api.get_flights()
 
