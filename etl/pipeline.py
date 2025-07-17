@@ -1,7 +1,13 @@
+####################
+#                  #
+# Authored BY : me #
+#                  #  
+####################
+
 import logging
 import traceback
 
-from Flight_radar_ETL.spark_analysis import run_spark_analysis
+from spark_analysis import run_spark_analysis
 from extract import extract_flights
 from load import save_to_csv
 from transform import clean_flights_data
@@ -11,7 +17,7 @@ def run_pipeline():
     logging.basicConfig(level=logging.INFO)
 
     try:
-        logger.info("🛫 Lancement du pipeline ETL FlightRadar24")
+        logger.info("Lancement du pipeline ETL FlightRadar24")
 
         # 1. Extraction
         df = extract_flights()

@@ -1,3 +1,9 @@
+####################
+#                  #
+# Authored BY : me #
+#                  #  
+####################
+
 # Lancement d'un Job chaque 2 heures ( while True: pour exécution infinie )
 
 import time
