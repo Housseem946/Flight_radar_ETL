@@ -1,18 +1,18 @@
-# ✈️ FlightRadar24 - ETL Pipeline avec CRON
+# ✈️ FlightRadar24 - ETL Pipeline avec CRONJOB
 
 ## Objectif
 
-Ce projet vise à construire un pipeline **ETL industrialisé**, **tolérant aux erreurs**, et **observable**, qui récupère toutes les **2 heures** les données de vol en temps réel depuis l’API [FlightRadar24](https://github.com/JeanExtreme002/FlightRadarAPI), les nettoie, les stocke au format **CSV** (nomenclature horodatée), puis lance une **analyse Spark** pour générer des **indicateurs métier** sur le trafic aérien mondial.
+Ce projet vise à construire un pipeline **ETL industrialisé**, **tolérant aux erreurs**, et **observable**, qui récupère toutes les **2 heures** les données de vol en temps réel depuis l’API [FlightRadar24](https://github.com/JeanExtreme002/FlightRadarAPI), les nettoie, les stocke au format **CSV** (nomenclature horodatée)(ou parquet), puis lance une **analyse Spark** pour générer des **indicateurs métier** sur le trafic aérien mondial.
 
 ---
 
 ## ⚙️ Architecture du pipeline
 
 ```
-+----------------------+     +----------------------+     +----------------------+
-|     EXTRACT          | --> |     TRANSFORM        | --> |        LOAD          |
-|  API FlightRadar24   |     |  Nettoyage, EDA      |     |  Parquet horodaté    |
-+----------------------+     +----------------------+     +----------------------+
++----------------------+     +----------------------+     +--------------------------+
+|     EXTRACT          | --> |     TRANSFORM        | --> |        LOAD              |
+|  API FlightRadar24   |     |  Nettoyage, EDA      |     |  CSV (Parquet sur la V1) |
++----------------------+     +----------------------+     +--------------------------+
 
                           Orchestration toutes les 2h
 
@@ -30,29 +30,32 @@ Ce projet vise à construire un pipeline **ETL industrialisé**, **tolérant aux
 ## Structure du projet
 
 ```
-.
+Flight_radar_ETL/
 ├── etl/
-│   ├── extract.py         # Récupération des vols depuis FlightRadar24
-│   ├── transform.py       # Exploration et nettoyage des données
-│   └── load.py            # Sauvegarde CSV horodatée
-|   └── pipeline.py        # Orchestration ETL en script Python
-│
-├── .gitignore                # Fichiers ignorés par Git
-|
-|   
+│   ├── __init__.py
+│   ├── extract.py              # Récupération des vols depuis FlightRadar24
+│   ├── transform.py            # Exploration et nettoyage des données
+│   ├── load.py                 # Sauvegarde CSV horodatée
+│   ├── pipeline.py             # Orchestration ETL en script Python
+│   ├── Cronjob/                # Jobs CRON pour exécuter le pipeline automatiquement
+│   │   ├── __init__.py
+│   │   ├── job_2H.py           # Job CRON exécuté toutes les 2 heures
+│   │   └── job_test_2min.py    # Job de test exécuté toutes les 2 minutes
+│   └── Flights/                # pour avori de la data sous format parquet 
+│       
 │
 ├── data/
-│   └── rawzone/           # Données Parquet structurées : tech_year=YYYY/...
+│   └── rawzone/                # Données CSV structurées : tech_year=YYYY/...
 │
 ├── notebooks/
-│   └── Flight_radar_ETL.ipynb    # Notebook principal pour l'affichage des résultats des analyses des indicateurs via PySpark
+│   └── Flight_radar_ETL.ipynb  # Notebook principal pour affichage des résultats
 │
-|── spark_analysis.py        # Script PySpark pour les analyses
-|
-├── README.md              # README
-└── requirements.txt       # Dépendances (Airflow, pandas, FlightRadarAPI...)
-└── conception.md          # Schéma d’architecture 
-
+├── spark_analysis.py          # Script PySpark pour les analyses (KPIs)
+├── requirements.txt           # Dépendances Python (FlightRadarAPI, pandas, etc.)
+├── readme.md                  # Documentation du projet
+├── conception.md              # Schéma d’architecture
+├── LICENSE
+└── Dockerfile                 # Conteneurisation du pipeline si besoin
 ```
 
 ---
@@ -208,9 +211,16 @@ Ou bien lancer le notebook Flight_radar_ETL
 
 ## Remarques
 
-J’ai opté pour un cronjob Python temporaire à la place d’Airflow en raison de contraintes de compatibilité (notamment avec WSL).
-Une version orchestrée Airflow sera proposée dans une future branche.
+- J’ai opté pour un cronjob Python temporaire à la place d’Airflow, en raison de contraintes de compatibilité (notamment avec WSL).  
+  Une version orchestrée via Airflow sera proposée dans une future branche.
+
+- J’ai utilisé des fichiers CSV dans cette première version afin d'observer concrètement les différences avec le format Parquet : taille des fichiers, vitesse de traitement, intégration avec Spark, etc.  
+  Le format Parquet, orienté colonne, permet une réduction significative de la taille des fichiers, un accès plus rapide aux données lors des agrégations, ainsi qu’un meilleur support des types de données.  
+  Une version optimisée du pipeline, exploitant le format Parquet, sera proposée dans une prochaine branche.
+
 
 ## Authored By me 
 
-N'hésitez pas à me contacter sur  LinkedIn en cas de problème ou piste d'amélioration.
+N'hésitez pas à me contacter sur LinkedIn en cas de problème ou piste d'amélioration.
+
+![alt text](image.png)
