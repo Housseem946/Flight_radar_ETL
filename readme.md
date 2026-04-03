@@ -222,5 +222,4 @@ Ou bien lancer le notebook Flight_radar_ETL
 ## Authored By me 
 
 N'hésitez pas à me contacter sur LinkedIn en cas de problème ou piste d'amélioration.
-Merci.
 ![alt text](image.png)
